@@ -1,0 +1,248 @@
+<blittransform>
+<div class="shop-wrap">
+    <h2 class="uk-h2">Blitline Transform Demo</h2>
+    <div style="margin-bottom:40px;">
+        Img Url: <input type="text" id="imageurl" name="imageurl" style="width:100%;" placeholder="Image url" value={imageurl}/>
+        Img Name: <input type="text" id="imagename" name="imagename" style="width:100%;" placeholder="Image name (include file extension)" value={imagename}/>
+        Function: <br/>
+        <select id="functiontype" name="functiontype">
+            <option value="blur">Blur</option>
+            <option value="quantize">Quantize</option>
+        </select>
+        <br>
+        Amount:
+        <input type="text" id="functionamount" name="functionamount" style="width:100%;" placeholder="Function Amount" value="{functionamount}"/>
+        <br/>
+        <br/>
+        <button class="uk-button uk-button-small uk-button-primary"  onclick={submitforprocessing}> Submit for Processing </button>
+    </div>
+</div>
+    <div class="shop-wrap">
+    <blittransformresult each={completedimages} completedimage={this}></blittransformresult>
+    </div>
+    <script>
+        var self = this;
+        self.imageurl = '';
+        self.imagename = '';
+        self.functionamount= '';
+        self.completedimages = [];
+        this.on('mount',function(){
+            RiotControl.trigger('transforminit');
+        });
+        RiotControl.on('transforminitialized',function(imageurl, imagename, functionamount){
+          self.imageurl = imageurl;
+            self.imagename = imagename;
+            self.functionamount = functionamount;
+            self.update();
+        });
+        submitforprocessing(e){
+            RiotControl.trigger('transformsubmit',$('#imageurl').val(), $('#imagename').val(),  $("#functiontype option:selected").val(), $('#functionamount').val());
+        }
+        RiotControl.on('transformdone',function(images){
+            self.completedimages.unshift(images);
+            self.update();
+        });
+    </script>
+</blittransform>
+
+<blittransformresult>
+    <div class="uk-panel uk-panel-box uk-margin-bottom">
+        <div style="float:left;">
+            Original:<br>
+        <img class="uk-thumbnail uk-thumbnail-mini uk-align-left" src={originalurl} />
+        </div>
+        <div style="float:left">
+            Transformed:<br>
+        <img class="uk-thumbnail uk-thumbnail-mini uk-align-left" src={s3_url} />
+        </div>
+
+    </div>
+    <script>
+        this.completedimage = opts.completedimage;
+    </script>
+</blittransformresult>
+
+<blitextract>
+    <style>
+        .color_group {
+            list-style-type: none;
+            margin-top: 2px;
+            float: left;
+        }
+        .color {
+            position: relative;
+            display: inline-block;
+            width: 15px;
+            height: 15px;
+            overflow: visible;
+            z-index: 1;
+            float: left;
+        }
+        .color span {
+            position: absolute;
+            display: inline-block;
+            width: 15px;
+            height: 15px;
+            margin-bottom: 5px;
+            background: #fff;
+        }
+    </style>
+    <div class="shop-wrap">
+        <h2 class="uk-h2">Blitline Extract Demo</h2>
+    <div style="margin-bottom:40px;">
+        Img Url: <input type="text" id="extractimageurl" name="extractimageurl" style="width:100%;" placeholder="Image url" value={imageurl}/>
+        Max Color Extraction:
+        <input type="text" id="maxcolors" name="maxcolors" style="width:100%;" placeholder="Max Color Extraction" value="{maxcolors}"/>
+        <br>
+        <br>
+        <button class="uk-button uk-button-small uk-button-primary"  onclick={submitforextraction}> Submit for Extraction </button>
+    </div>
+    </div>
+    <div class="show-wrap" if="{colors}" style="display:inline-block">
+
+        <ul class="color_group"><li each={colors} class="color"><span style="background-color:{color.hex_color}" title="{percentage}%"></span> </li></ul>
+
+    </div>
+    <script>
+        var self = this;
+        self.imageurl = '';
+        self.maxcolors = '';
+
+        this.on('mount',function(){
+            RiotControl.trigger('extractinit');
+        });
+        RiotControl.on('extractinitialized',function(imageurl, maxcolors){
+            self.imageurl = imageurl;
+            self.maxcolors = maxcolors;
+            self.update();
+        });
+        RiotControl.on('extractdone',function(colors){
+            self.best_guess_background = colors.best_guess_background;
+            self.colors = colors.data;
+            self.update();
+        });
+        submitforextraction(e){
+            RiotControl.trigger('extractsubmit',$('#extractimageurl').val(), $('#maxcolors').val());
+        }
+    </script>
+</blitextract>
+
+<blitshot>
+
+    <div class="shop-wrap">
+        <h2 class="uk-h2">Blitline Blitshot Demo</h2>
+        <div style="margin-bottom:40px;">
+            Page Url: <input type="text" id="pageurl" name="pageurl" style="width:100%;" placeholder="Image url" value={pageurl}/>
+            <br>
+            <br>
+            <button class="uk-button uk-button-small uk-button-primary"  onclick={submitforblitshot}> Submit for Blitshot </button> ...takes a tick
+        </div>
+        <div if="{blitshoturl}">
+            <img src="{blitshoturl}"/>
+        </div>
+    </div>
+
+    <script>
+        var self = this;
+        self.pageurl = '';
+        self.blitshoturl = '';
+        this.on('mount',function(){
+            RiotControl.trigger('blitshotinit');
+        });
+        RiotControl.on('blitshotinitialized',function(pageurl){
+            self.pageurl = pageurl;
+            self.update();
+        });
+        RiotControl.on('blitshotdone',function(screenshot){
+           self.blitshoturl = screenshot.s3_url;
+            self.update();
+        });
+        submitforblitshot(e){
+            RiotControl.trigger('blitshotsubmit',$('#pageurl').val());
+        }
+    </script>
+</blitshot>
+
+<blitcomposite>
+
+    <div class="shop-wrap">
+        <h2 class="uk-h2">Blitline Composite Demo</h2>
+        <div style="margin-bottom:40px;">
+            Base Url: <input type="text" id="baseurl" name="baseurl" style="width:100%;" placeholder="Base image url" value={baseurl}/>
+            Layer 1: <input type="text" id="layer1url" name="layer1url" style="width:100%;" placeholder="Layer 1 url" value={layer1url}/>
+            Another layer for use:  {layer2url}
+            <br>
+            <br>
+            <button class="uk-button uk-button-small uk-button-primary"  onclick={submitforcomposite}> Submit for Composite </button> ...takes a tick
+        </div>
+        <div if="{compositeurl}">
+            <img src="{compositeurl}"/>
+        </div>
+    </div>
+
+    <script>
+        var self = this;
+        self.baseurl = '';
+        self.layer1url = '';
+        self.layer2url = '';
+        self.compositeurl = '';
+        this.on('mount',function(){
+            RiotControl.trigger('compositeinit');
+        });
+        RiotControl.on('compositeinitialized',function(baseurl, layer1url, layer2url){
+            self.baseurl = baseurl;
+            self.layer1url = layer1url;
+            self.layer2url = layer2url;
+            self.update();
+        });
+        RiotControl.on('compositedone',function(screenshot){
+            debugger;
+            self.compositeurl = screenshot.s3_url;
+            self.update();
+        });
+        submitforcomposite(e){
+            RiotControl.trigger('compositesubmit',$('#baseurl').val(),$('#layer1url').val());
+        }
+    </script>
+</blitcomposite>
+
+<blitscript>
+
+    <div class="shop-wrap">
+        <h2 class="uk-h2">Blitline ImageMagick Demo</h2>
+        <div style="margin-bottom:40px;">
+            Script Url: <input type="text" id="scripturl" name="baseurl" style="width:100%;" placeholder="Script Url" value={scripturl}/>
+            Image 1: <input type="text" id="image1url" name="image1url" style="width:100%;" placeholder="Image 1 url" value={image1url}/>
+
+            <br>
+            <br>
+            <button class="uk-button uk-button-small uk-button-primary"  onclick={submitforscript}> Submit for Script </button> ...takes a tick
+        </div>
+        <div if="{scriptedimage}">
+            <img src="{scriptedimage}"/>
+        </div>
+    </div>
+
+    <script>
+        var self = this;
+        self.scripturl = '';
+        self.image1url = '';
+        self.scriptedimage = '';
+        this.on('mount',function(){
+            RiotControl.trigger('scriptinit');
+        });
+        RiotControl.on('scriptinitialized',function(scripturl, image1url){
+            self.scripturl = scripturl;
+            self.image1url = image1url;
+            self.update();
+        });
+        RiotControl.on('scriptdone',function(screenshot){
+            self.scriptedimage = screenshot.s3_url;
+            self.update();
+
+        });
+        submitforscript(e){
+            RiotControl.trigger('scriptsubmit',$('#scripturl').val(),$('#image1url').val());
+        }
+    </script>
+</blitscript>
