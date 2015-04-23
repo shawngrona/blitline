@@ -76,7 +76,8 @@ function BlitlineStore() {
         self.blitline.submit(JSON.stringify(json), events);
     });
 
-    self.on('blitshotsubmit', function(pageurl) {
+    self.on('blitshotsubmit', function(pageurl, width, height, x, y, postbackurl) {
+        var postbackstuff = '';
         var d = new Date();
         var json = {
             "application_id": self.myAppId,
@@ -87,8 +88,8 @@ function BlitlineStore() {
                 "delay":5000
             },
             "functions": [{
-                "name": "resize_to_fit",
-                "params": {"width":600},
+                "name": "crop",
+                "params": {"x": x, "y": y, "width": width, "height": height},
                 "save": {"image_identifier": "blitshot.png",
                     "s3_destination" : {
                         "bucket" : "amp-blit-test",
@@ -97,22 +98,49 @@ function BlitlineStore() {
             }
             ]
         };
+        if (postbackurl){
+            json["postback_url"] = postbackurl;
+        }
         var events = {
             completed : function(results, error) {
                 self.blitlineimages = results[0].images[0];
                 RiotControl.trigger('blitshotdone',self.blitlineimages);
             }
         }
+        if (postbackurl){
+            RiotControl.trigger('blitshotsubmitted',postbackurl+"?inspect");
+        }
         self.blitline.submit(JSON.stringify(json), events);
+
     });
-    self.on('compositesubmit', function(baseurl, layer1url) {
+    self.on('compositesubmit', function(baseurl, layer1url, layer1x, layer1y, asmask, rotate) {
         var d = new Date();
         var json = {
             "application_id": self.myAppId,
             "src": baseurl,
-            "functions": [{
+            "pre_process": [
+                {
+                    "job": {
+                        "src": layer1url,
+                        "functions": [
+                            {
+                                "name": "rotate",
+                                "params":{
+                                    "amount":rotate
+                                },
+                                "save": {
+                                    "extension": ".png",
+                                    "image_identifier": "MY_TEST"
+                                }
+                            }
+                        ]
+                    }
+                }
+            ],
+            "functions":
+                [ {
                 "name": "composite",
-                "params": {"src":layer1url},
+                "params": {"src":"&MY_TEST", "x":layer1x,"y":layer1y,"as_mask":asmask},
                 "save": {"image_identifier": "composite.png",
                     "s3_destination" : {
                         "bucket" : "amp-blit-test",
@@ -120,7 +148,7 @@ function BlitlineStore() {
                     }}
             }
             ]
-        };
+        }
         var events = {
             completed : function(results, error) {
                 self.blitlineimages = results[0].images[0];
@@ -128,6 +156,8 @@ function BlitlineStore() {
             }
         }
         self.blitline.submit(JSON.stringify(json), events);
+
+
     });
     self.on('scriptsubmit', function(scripturl, image1url) {
 
@@ -169,13 +199,21 @@ function BlitlineStore() {
     });
     self.on('blitshotinit',function(){
         self.pageurl = 'http://www.merchify.com/';
-        RiotControl.trigger('blitshotinitialized',self.pageurl);
+        self.width = 400;
+        self.height = 400;
+        self.x = 0;
+        self.y = 0;
+        self.postbackurl = 'http://requestb.in/omaknjom';
+        RiotControl.trigger('blitshotinitialized',self.pageurl, self.width, self.height,self.x,self.y, self.postbackurl);
     });
     self.on('compositeinit',function(){
         self.baseurl = 'https://s3.amazonaws.com/amp-blit-test/background.png';
         self.layer1url = 'https://s3.amazonaws.com/amp-blit-test/layer1.png';
-        self.layer2url = 'https://s3.amazonaws.com/amp-blit-test/layer2.png';
-        RiotControl.trigger('compositeinitialized',self.baseurl, self.layer1url, self.layer2url);
+        self.additionallayer = 'https://s3.amazonaws.com/amp-blit-test/layer2.png';
+        self.layer1x = 0;
+        self.layer1y = 0;
+        self.rotate = 25;
+        RiotControl.trigger('compositeinitialized',self.baseurl, self.layer1url, self.additionallayer, self.layer1x, self.layer1y, self.rotate);
     });
     self.on('scriptinit',function(){
         self.scripturl = 'https://s3.amazonaws.com/amp-blit-test/cylinderize.sh';

@@ -133,9 +133,15 @@
         <h2 class="uk-h2">Blitline Blitshot Demo</h2>
         <div style="margin-bottom:40px;">
             Page Url: <input type="text" id="pageurl" name="pageurl" style="width:100%;" placeholder="Image url" value={pageurl}/>
+            Width: <input type="text" id="width" name="width" style="width:100%;" placeholder="Width" value={width}/>
+            Height: <input type="text" id="height" name="height" style="width:100%;" placeholder="Height" value={height}/><br>
+            Use Postback: <input id="usepostback" type="checkbox" onchange={showpostback} /><br>
+            <div id="postbackurldiv" style="display:none">Postback Url: <input type="text" id="postbackurl" name="postbackurl" style="width:100%;" placeholder="postback url" value={postbackurl}/></div>
+            X: <input type="text" id="x" name="x" style="width:100%;" placeholder="Height" value={x}/>
+            Y: <input type="text" id="Y" name="Y" style="width:100%;" placeholder="Height" value={y}/>
             <br>
             <br>
-            <button class="uk-button uk-button-small uk-button-primary"  onclick={submitforblitshot}> Submit for Blitshot </button> ...takes a tick
+            <button class="uk-button uk-button-small uk-button-primary"  onclick={submitforblitshot}> Submit for Blitshot </button> <span if="{!requestbin}">...takes a tick</span><span if="{requestbin}"><a href="{requestbin}" target="_blank">Check postback here</a></span>
         </div>
         <div if="{blitshoturl}">
             <img src="{blitshoturl}"/>
@@ -146,11 +152,22 @@
         var self = this;
         self.pageurl = '';
         self.blitshoturl = '';
+        self.width = '';
+        self.height = '';
+        self.x = '';
+        self.y = '';
+        self.postbackurl = '';
+        self.requestbin = '';
         this.on('mount',function(){
             RiotControl.trigger('blitshotinit');
         });
-        RiotControl.on('blitshotinitialized',function(pageurl){
+        RiotControl.on('blitshotinitialized',function(pageurl, width, height, x, y, postbackurl){
             self.pageurl = pageurl;
+            self.width = width;
+            self.height = height;
+            self.x = x;
+            self.y = y;
+            self.postbackurl = postbackurl;
             self.update();
         });
         RiotControl.on('blitshotdone',function(screenshot){
@@ -158,7 +175,19 @@
             self.update();
         });
         submitforblitshot(e){
-            RiotControl.trigger('blitshotsubmit',$('#pageurl').val());
+            postbackurl = '';
+            if ($("#usepostback").is(':checked')){
+                postbackurl = $('#postbackurl').val()
+            }
+            RiotControl.trigger('blitshotsubmit',$('#pageurl').val(),$('#width').val(),$('#height').val(),$('#x').val(),$('#y').val(),postbackurl);
+        }
+        RiotControl.on('blitshotsubmitted',function(requestbin){
+            self.requestbin = requestbin;
+            self.update();
+        });
+
+        showpostback(e){
+            $("#postbackurldiv").toggle();
         }
     </script>
 </blitshot>
@@ -169,11 +198,16 @@
         <h2 class="uk-h2">Blitline Composite Demo</h2>
         <div style="margin-bottom:40px;">
             Base Url: <input type="text" id="baseurl" name="baseurl" style="width:100%;" placeholder="Base image url" value={baseurl}/>
+            Base as Mask: <br><input type="checkbox" id="srcasmask" name="srcasmask"/>
+            <br>
             Layer 1: <input type="text" id="layer1url" name="layer1url" style="width:100%;" placeholder="Layer 1 url" value={layer1url}/>
-            Another layer for use:  {layer2url}
+            Another layer for use:  {additionallayer}<br>
+            Layer 1 rotate: <input type="text" id="rotate" name="rotate" style="width:100%;" placeholder="Layer 1 rotate" value={rotate}/>
+            Layer 1 X: <input type="text" id="layer1x" name="layer1x" style="width:100%;" placeholder="Layer 1 x" value={layer1x}/>
+            Layer 1 Y: <input type="text" id="layer1y" name="layer1y" style="width:100%;" placeholder="Layer 1 y" value={layer1y}/>
             <br>
             <br>
-            <button class="uk-button uk-button-small uk-button-primary"  onclick={submitforcomposite}> Submit for Composite </button> ...takes a tick
+            <button class="uk-button uk-button-small uk-button-primary"  onclick={submitforcomposite}> Submit for Composite </button>
         </div>
         <div if="{compositeurl}">
             <img src="{compositeurl}"/>
@@ -184,23 +218,30 @@
         var self = this;
         self.baseurl = '';
         self.layer1url = '';
-        self.layer2url = '';
+        self.additionallayer = '';
+        self.layer1x = '';
+        self.layer1y = '';
+        self.rotate = '';
         self.compositeurl = '';
         this.on('mount',function(){
             RiotControl.trigger('compositeinit');
         });
-        RiotControl.on('compositeinitialized',function(baseurl, layer1url, layer2url){
+        RiotControl.on('compositeinitialized',function(baseurl, layer1url, additionallayer, layer1x, layer1y, rotate){
             self.baseurl = baseurl;
             self.layer1url = layer1url;
-            self.layer2url = layer2url;
+            self.additionallayer = additionallayer;
+            self.layer1x = layer1x;
+            self.layer1y = layer1y;
+            self.rotate = rotate;
             self.update();
         });
         RiotControl.on('compositedone',function(screenshot){
             self.compositeurl = screenshot.s3_url;
             self.update();
         });
+
         submitforcomposite(e){
-            RiotControl.trigger('compositesubmit',$('#baseurl').val(),$('#layer1url').val());
+            RiotControl.trigger('compositesubmit',$('#baseurl').val(),$('#layer1url').val(),$('#layer1x').val(),$('#layer1y').val(),$("#srcasmask").is(':checked'),$("#rotate").val());
         }
     </script>
 </blitcomposite>
